@@ -1,74 +1,34 @@
-.. title:: Home
+FROM cs50/baseimage
 
-.. toctree::
-   :caption: Command-Line Tools
-   :hidden:
-   :maxdepth: 1
+USER root
 
-   check50/index
-   cli50
-   compare50/index
-   render50
-   style50
-   submit50
+ARG DEBIANFRONTEND=noninteractive
 
-.. toctree::
-   :caption: Docker Images
-   :hidden:
-   :maxdepth: 1
+# Install apt packages
+RUN apt-get install --allow-downgrades -y libcs50=8.1.2
 
-   cs50/baseimage
-   cs50/check
-   cs50/cli
-   cs50/ide
-   cs50/sandbox
-   cs50/server
+# TODO remove after fixing check50 issue
+RUN pip3 install pip==9
 
-.. toctree::
-   :caption: FAQs
-   :hidden:
-   :maxdepth: 1
+# Install Python packages
+# TODO remove werkzeug after https://github.com/fengsp/flask-session/issues/99 is fixed
+RUN pip3 install \
+        flask_sqlalchemy \
+        nltk \
+        passlib \
+        pytz \
+        'werkzeug<0.15' && \
+    python3 -m nltk.downloader -d /usr/share/nltk_data/ punkt
 
-   CS50x <faq/cs50x>
+# check50 wrapper
+COPY ./check50-wrapper /usr/local/bin/
+RUN chmod a+x /usr/local/bin/check50-wrapper
 
-.. toctree::
-   :caption: HOWTOs
-   :hidden:
-   :maxdepth: 1
+USER ubuntu
 
-   docker
-   heroku
-   pip
-   python
-   terminal
-   site
+# Clone checks
+RUN git clone -b master https://github.com/cs50/checks.git ~/.local/share/check50/cs50/checks/
 
-.. toctree::
-   :caption: Libraries
-   :hidden:
-   :maxdepth: 1
-
-   C <library/c>
-   C++ <library/cpp>
-   Java <library/java>
-   Python <library/python>
-
-.. toctree::
-   :caption: Style Guides
-   :hidden:
-   :maxdepth: 1
-
-   C <style/c>
-
-.. toctree::
-   :caption: Web Apps
-   :hidden:
-   :maxdepth: 1
-
-   forms
-   ide/index
-   lab
-   sandbox
-   vault
-
-.. image:: 2ep2od.jpg
+# Configure git
+RUN git config --global user.name bot50 && \
+    git config --global user.email bot@cs50.harvard.edu
